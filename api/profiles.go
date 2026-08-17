@@ -4,8 +4,8 @@ package api
 import (
 	"net/http"
 
-	"github.com/jacobwechuli/musicstory/internal/db"
-	"github.com/jacobwechuli/musicstory/internal/render"
+	"github.com/jacobwechuli/musicstory/pkg/db"
+	"github.com/jacobwechuli/musicstory/pkg/render"
 )
 
 func ProfilesHandler(w http.ResponseWriter, r *http.Request) {
