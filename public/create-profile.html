@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,700;0,900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night: #0b0d0f; --panel: #141719; --paper: #ededea;
+    --green: #7aeea4; --amber: #fcba5a; --line: rgba(237,237,234,0.14);
+  }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0; min-height: 100vh; background: var(--night); color: var(--paper);
+    font-family: 'IBM Plex Mono', monospace; padding: 40px 20px 80px;
+  }
+  .wrap{ max-width: 560px; margin: 0 auto; }
+  a.back{ display:inline-block; font-size:12px; letter-spacing:0.1em; color: var(--green); text-decoration:none; opacity:0.7; margin-bottom:28px; }
+  .kicker{ font-size: 12px; letter-spacing: 0.14em; color: var(--green); margin: 0 0 16px; }
+  h1{ font-family: 'Archivo', sans-serif; font-weight: 900; font-size: clamp(1.8rem, 6vw, 2.4rem); margin: 0 0 32px; }
+
+  label{ display:block; font-size: 12.5px; color: rgba(237,237,234,0.6); margin-bottom: 8px; }
+  input[type="text"], textarea{
+    width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 14px;
+    padding: 12px 14px; margin-bottom: 22px;
+  }
+  textarea{ resize: vertical; min-height: 70px; }
+
+  fieldset{ border: none; padding: 0; margin: 0 0 24px; }
+  .radio-row{ display:flex; gap: 20px; margin-bottom: 12px; font-size: 13.5px; }
+  .radio-row label{ display:flex; align-items:center; gap: 8px; margin: 0; color: var(--paper); }
+
+  .song-row{
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 16px; margin-bottom: 12px; position: relative;
+  }
+  .song-row .n{ font-size: 11px; color: var(--green); margin-bottom: 8px; display:block; }
+  .song-row input{ margin-bottom: 10px; }
+  .song-row input:last-child{ margin-bottom: 0; }
+  .remove-song{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color: rgba(237,237,234,0.4); cursor:pointer; font-size: 13px;
+  }
+  .remove-song:hover{ color: var(--amber); }
+
+  button.add{
+    background: none; border: 1px dashed var(--line); color: var(--green);
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 12px;
+    width: 100%; border-radius: 4px; cursor: pointer; margin-bottom: 32px;
+  }
+  button.add:hover{ border-color: var(--green); }
+
+  button.submit{
+    width: 100%; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 15px;
+    color: var(--night); background: var(--green); border: none; padding: 16px;
+    border-radius: 999px; cursor: pointer; transition: transform 0.2s ease;
+  }
+  button.submit:hover{ transform: translateY(-2px); }
+  button.submit:disabled{ opacity: 0.5; cursor: default; transform: none; }
+
+  #status{ margin-top: 16px; font-size: 13px; text-align: center; min-height: 20px; }
+  #status.error{ color: var(--amber); }
+  #status.ok{ color: var(--green); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="index.html">&larr; back to the front page</a>
+
+  <p class="kicker">// NEW_PROFILE.WAV</p>
+  <h1>Tell us what you're playing.</h1>
+
+  <form id="profile-form">
+    <label for="display_name">Your name</label>
+    <input type="text" id="display_name" required placeholder="Kevin">
+
+    <label for="tagline">One-liner (optional)</label>
+    <input type="text" id="tagline" placeholder="genre-agnostic, always loud">
+
+    <fieldset>
+      <label>Your story</label>
+      <div class="radio-row">
+        <label><input type="radio" name="story_mode" value="write" checked> I'll write it</label>
+        <label><input type="radio" name="story_mode" value="ai"> let AI write it</label>
+        <label><input type="radio" name="story_mode" value="skip"> skip it</label>
+      </div>
+      <textarea id="story_text" placeholder="A couple sentences about you and music..."></textarea>
+    </fieldset>
+
+    <label>Songs</label>
+    <div id="songs"></div>
+    <button type="button" class="add" id="add-song">+ add another song</button>
+
+    <button type="submit" class="submit" id="submit-btn">Create Profile &rarr;</button>
+    <div id="status"></div>
+  </form>
+
+</div>
+
+<script>
+const songsEl = document.getElementById('songs');
+let songCount = 0;
+
+function addSongRow() {
+  songCount++;
+  const row = document.createElement('div');
+  row.className = 'song-row';
+  row.innerHTML = `
+    <span class="n">${String(songCount).padStart(2, '0')}</span>
+    ${songCount > 1 ? '<button type="button" class="remove-song">remove</button>' : ''}
+    <input type="text" class="song-input" placeholder="Paste a Spotify link, or just type the song name">
+    <input type="text" class="song-note" placeholder="Why this one? (optional — leave blank and AI will write a caption)">
+  `;
+  songsEl.appendChild(row);
+  const removeBtn = row.querySelector('.remove-song');
+  if (removeBtn) removeBtn.addEventListener('click', () => row.remove());
+}
+
+for (let i = 0; i < 3; i++) addSongRow();
+document.getElementById('add-song').addEventListener('click', addSongRow);
+
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit-btn');
+  statusEl.textContent = '';
+  statusEl.className = '';
+
+  const displayName = document.getElementById('display_name').value.trim();
+  const tagline = document.getElementById('tagline').value.trim();
+  const storyMode = document.querySelector('input[name="story_mode"]:checked').value;
+  const storyText = document.getElementById('story_text').value.trim();
+
+  const songRows = Array.from(document.querySelectorAll('.song-row'));
+  const songs = songRows
+    .map(row => ({
+      input: row.querySelector('.song-input').value.trim(),
+      note: row.querySelector('.song-note').value.trim(),
+    }))
+    .filter(s => s.input !== '');
+
+  if (!displayName) { statusEl.textContent = 'Your name is required.'; statusEl.className = 'error'; return; }
+  if (songs.length === 0) { statusEl.textContent = 'Add at least one song.'; statusEl.className = 'error'; return; }
+
+  const payload = {
+    display_name: displayName,
+    tagline: tagline,
+    story: storyMode === 'write' ? storyText : '',
+    want_ai_story: storyMode === 'ai',
+    story_notes: storyMode === 'ai' ? storyText : '',
+    songs: songs,
+  };
+
+  submitBtn.disabled = true;
+  statusEl.textContent = 'Creating your page...';
+
+  try {
+    const res = await fetch('/api/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || 'Something went wrong.');
+    }
+    const data = await res.json();
+    statusEl.textContent = 'Done — taking you there now.';
+    statusEl.className = 'ok';
+    window.location.href = '/user/' + data.slug;
+  } catch (err) {
+    statusEl.textContent = err.message || 'Something went wrong. Try again.';
+    statusEl.className = 'error';
+    submitBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

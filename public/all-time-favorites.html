@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All-Time Favorite Songs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream: #f4ede0;
+    --cream-deep: #eadfc9;
+    --ink: #221d16;
+    --amber: #b57a2c;
+    --amber-soft: #dba24f;
+    --rose: #a1495b;
+    --teal: #2c565c;
+    --line: rgba(34,29,22,0.16);
+    --max-w: 900px;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(181,122,44,0.14), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(44,86,92,0.10), transparent 55%),
+      var(--cream);
+    color: var(--ink);
+    font-family: 'Sora', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.6;
+  }
+
+  .wrap{
+    position: relative;
+    z-index: 1;
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: clamp(24px, 6vw, 64px) clamp(18px, 5vw, 32px) 100px;
+  }
+
+  nav.crumbs{
+    margin-bottom: 36px;
+  }
+  nav.crumbs a{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid var(--teal);
+    padding: 12px 20px;
+    border-radius: 999px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  nav.crumbs a:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(44,86,92,0.25);
+  }
+  nav.crumbs a.current{
+    background: var(--rose);
+    border-color: var(--rose);
+    color: #fff8f2;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    position: relative;
+    padding-bottom: 40px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 22px;
+  }
+
+  .eyebrow .dot{
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--rose);
+  }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(2.4rem, 7vw, 4rem);
+    line-height: 1.02;
+    margin: 0 0 20px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  h1 em{
+    font-style: italic;
+    font-weight: 500;
+    color: var(--amber);
+  }
+
+  .lede{
+    max-width: 56ch;
+    color: rgba(34,29,22,0.72);
+    font-size: 1.05rem;
+    margin: 0;
+  }
+
+  .lede strong{
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .tape-meta{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 10px 28px;
+    margin-top: 28px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(34,29,22,0.55);
+    letter-spacing: 0.03em;
+  }
+  .tape-meta span b{ color: var(--rose); font-weight: 500; }
+
+  /* ---------- Ranked list ---------- */
+  .side-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 24px;
+    display:flex;
+    align-items:center;
+    gap: 14px;
+  }
+  .side-label::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background: var(--line);
+  }
+
+  .ranked{
+    display:flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .track{
+    display:grid;
+    grid-template-columns: 56px 1fr;
+    gap: 16px;
+    background: linear-gradient(180deg, #fffdf8, var(--cream-deep));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    position: relative;
+    box-shadow: 0 1px 2px rgba(34,29,22,0.04);
+    transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .track:hover{
+    border-color: rgba(181,122,44,0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(34,29,22,0.08);
+  }
+
+  .rank{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 2.1rem;
+    color: var(--amber-soft);
+    line-height: 1;
+    -webkit-text-stroke: 1px var(--amber);
+    color: transparent;
+    align-self: start;
+    padding-top: 4px;
+  }
+
+  .track-body{
+    min-width: 0;
+  }
+
+  .track-note{
+    font-size: 14px;
+    color: rgba(34,29,22,0.68);
+    margin: 0 0 12px;
+  }
+
+  .embed-frame{
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .embed-frame iframe{
+    display:block;
+    width: 100%;
+    border: 0;
+  }
+
+  @media (max-width: 480px){
+    .track{
+      grid-template-columns: 40px 1fr;
+      padding: 14px;
+    }
+    .rank{
+      font-size: 1.6rem;
+    }
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top: 64px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    justify-content: space-between;
+    gap: 16px;
+    font-family:'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(34,29,22,0.45);
+    letter-spacing: 0.03em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+    .track{ transition: none; }
+  }
+
+  .bg-anim{
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .blob-wrap{
+    position: absolute;
+    transform: translateY(var(--scrollY, 0px));
+    transition: transform 0.15s linear;
+  }
+  .blob{
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.2;
+    will-change: transform;
+  }
+  .b1{ width: 440px; height: 440px; top: -140px; left: -100px; background: var(--rose); animation: drift1 28s ease-in-out infinite; }
+  .b2{ width: 380px; height: 380px; top: 32%; right: -140px; background: var(--amber); animation: drift2 34s ease-in-out infinite; }
+  .b3{ width: 340px; height: 340px; bottom: -110px; left: 18%; background: var(--teal); animation: drift3 24s ease-in-out infinite; }
+
+  @keyframes drift1{
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(55px, 45px) scale(1.12); }
+  }
+  @keyframes drift2{
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-45px, 55px) scale(0.9); }
+  }
+  @keyframes drift3{
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(35px, -45px) scale(1.08); }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .blob{ animation: none !important; }
+    .blob-wrap{ transform: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-anim" aria-hidden="true">
+  <div class="blob-wrap" data-depth="0.05"><span class="blob b1"></span></div>
+  <div class="blob-wrap" data-depth="0.09"><span class="blob b2"></span></div>
+  <div class="blob-wrap" data-depth="0.03"><span class="blob b3"></span></div>
+</div>
+<div class="wrap">
+
+  <nav class="crumbs">
+    <a href="ted.html">Ted's story</a>
+    <a href="favorite-songs.html">this week's rotation</a>
+    <a href="all-time-favorites.html" class="current">all-time favorites</a>
+    <a href="favorite-albums.html">favorite albums</a>
+    <a href="nostalgic-music.html">nostalgic music</a>
+    <a href="rihanna.html">Rihanna</a>
+  </nav>
+
+  <header>
+    <div class="eyebrow"><span class="dot"></span> the permanent collection</div>
+    <h1>All-time<br><em>favorites</em></h1>
+    <p class="lede">
+      These aren't the songs of a given week &mdash; they're the ones that stuck around
+      for years, moved apartments with me, survived every phone upgrade and playlist
+      purge. <strong>Ranked, this time, and on purpose.</strong> If the house was on fire
+      and I could only save one Spotify link, it'd be somewhere on this list.
+    </p>
+    <div class="tape-meta">
+      <span><b>Status</b> permanent</span>
+      <span><b>Tracks</b> 6</span>
+      <span><b>Order</b> counts this time</span>
+    </div>
+  </header>
+
+  <p class="side-label">the ranking</p>
+
+  <div class="ranked">
+
+    <div class="track">
+      <div class="rank">01</div>
+      <div class="track-body">
+        <p class="track-note">Music for the soul.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/2tUXE87QNnoVQZApV3uyVZ?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="rank">02</div>
+      <div class="track-body">
+        <p class="track-note">The perfect song for a bike ride on a Sunday afternoon.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/1y5eHXBYiLgNv00KoHXm4o?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="rank">03</div>
+      <div class="track-body">
+        <p class="track-note">Reminds me of my friend Kate. Rest easy, Kate.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/4k5FlWz3dfhyQzmRpVPZsW?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="rank">04</div>
+      <div class="track-body">
+        <p class="track-note">How this isn't higher, I don't know.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/4nP3JxLWurlrvollaDlxsJ?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="rank">05</div>
+      <div class="track-body">
+        <p class="track-note">Ami Faku, while out on a walk.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/2qxgejJTaZIHNSHDD22Uhl?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="track">
+      <div class="rank">06</div>
+      <div class="track-body">
+        <p class="track-note">Excellent beats.</p>
+        <div class="embed-frame">
+          <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/track/7BH6nyhnWTSfMUwwrCYbJF?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <span>the ones that lasted</span>
+    <span><a href="favorite-songs.html" style="color:inherit;">back to this week &rarr;</a></span>
+  </footer>
+
+</div>
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reduce) return;
+  var wraps = document.querySelectorAll('.blob-wrap');
+  var ticking = false;
+  function update(){
+    var y = window.scrollY;
+    wraps.forEach(function(el){
+      var depth = parseFloat(el.getAttribute('data-depth')) || 0.05;
+      el.style.setProperty('--scrollY', (y * depth).toFixed(1) + 'px');
+    });
+    ticking = false;
+  }
+  window.addEventListener('scroll', function(){
+    if(!ticking){
+      requestAnimationFrame(update);
+      ticking = true;
+    }
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
