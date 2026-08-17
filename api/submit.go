@@ -31,11 +31,11 @@ import (
 	"strconv"
 	"strings"
 
-	"yourmodule/internal/captioner"
-	"yourmodule/internal/db"
-	"yourmodule/internal/models"
-	"yourmodule/internal/spotify"
-	"yourmodule/internal/storyteller"
+	"github.com/jacobwechuli/musicstory/internal/captioner"
+	"github.com/jacobwechuli/musicstory/internal/db"
+	"github.com/jacobwechuli/musicstory/internal/models"
+	"github.com/jacobwechuli/musicstory/internal/spotify"
+	"github.com/jacobwechuli/musicstory/internal/storyteller"
 )
 
 type submitSong struct {

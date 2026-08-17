@@ -9,7 +9,7 @@ import (
 	"html/template"
 	"net/http"
 
-	"yourmodule/internal/models"
+	"github.com/jacobwechuli/musicstory/internal/models"
 )
 
 //go:embed user-template.html

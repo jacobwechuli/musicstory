@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"net/http"
 
-	"yourmodule/internal/db"
-	"yourmodule/internal/render"
+	"github.com/jacobwechuli/musicstory/internal/db"
+	"github.com/jacobwechuli/musicstory/internal/render"
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {

@@ -1,4 +1,4 @@
-module yourmodule
+module github.com/jacobwechuli/musicstory
 
 go 1.22
 

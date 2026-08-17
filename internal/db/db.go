@@ -11,7 +11,7 @@ import (
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 
-	"yourmodule/internal/models"
+	"github.com/jacobwechuli/musicstory/internal/models"
 )
 
 var (
