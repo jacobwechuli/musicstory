@@ -13,12 +13,13 @@
 //	}
 //
 // On success returns {"slug": "all-time-favorites", "user_slug": "kevin"}.
-package api
+package handler
 
 import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -27,6 +28,14 @@ import (
 	"github.com/jacobwechuli/musicstory/pkg/models"
 	"github.com/jacobwechuli/musicstory/pkg/spotify"
 )
+
+var catSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
+
+func slugifyCat(name string) string {
+	s := strings.ToLower(strings.TrimSpace(name))
+	s = catSlugPattern.ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
+}
 
 type categorySong struct {
 	Input string `json:"input"`
@@ -40,7 +49,7 @@ type categoryRequest struct {
 	Songs       []categorySong `json:"songs"`
 }
 
-func CategoryHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -123,7 +132,7 @@ func CategoryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Derive a slug from the category name and de-duplicate within this user.
-	catSlug := slugify(req.Name)
+	catSlug := slugifyCat(req.Name)
 	for i := 0; ; i++ {
 		candidate := catSlug
 		if i > 0 {

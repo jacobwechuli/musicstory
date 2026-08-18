@@ -1,5 +1,5 @@
 // GET /user/:slug  (rewritten from /api/user?slug=...  — see vercel.json)
-package api
+package handler
 
 import (
 	"database/sql"

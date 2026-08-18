@@ -1,6 +1,6 @@
 // GET /user/:slug/category/:cat  (rewritten via vercel.json)
 // Renders a single category page for a user.
-package api
+package handler
 
 import (
 	"database/sql"
@@ -10,7 +10,7 @@ import (
 	"github.com/jacobwechuli/musicstory/pkg/render"
 )
 
-func CategoryPageHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	userSlug := r.URL.Query().Get("slug")
 	catSlug := r.URL.Query().Get("cat")
 	if userSlug == "" || catSlug == "" {

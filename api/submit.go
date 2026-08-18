@@ -21,7 +21,7 @@
 // "input" can be a pasted Spotify link OR a plain song name — both are
 // handled below. "note" is optional per song; if left blank, that song
 // goes into the batched caption-generation call.
-package api
+package handler
 
 import (
 	"encoding/json"
@@ -52,7 +52,7 @@ type submitRequest struct {
 	Songs       []submitSong `json:"songs"`
 }
 
-func SubmitHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return

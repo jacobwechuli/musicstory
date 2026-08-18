@@ -1,5 +1,5 @@
 // GET /profiles  (rewritten from /api/profiles — see vercel.json)
-package api
+package handler
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/jacobwechuli/musicstory/pkg/render"
 )
 
-func ProfilesHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	database, err := db.Open()
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
