@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{.DisplayName}} — Favorite Songs</title>
+<title>{{.Category.Name}} — {{.UserSlug}}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,10 +19,8 @@
     --line: rgba(34,29,22,0.16);
     --max-w: 900px;
   }
-
   *{ box-sizing: border-box; }
   html{ scroll-behavior: smooth; }
-
   body{
     margin:0;
     background:
@@ -34,13 +32,12 @@
     -webkit-font-smoothing: antialiased;
     line-height: 1.6;
   }
-
   .bg-anim{ position: fixed; inset: 0; overflow: hidden; z-index: 0; pointer-events: none; }
   .blob-wrap{ position: absolute; transform: translateY(var(--scrollY, 0px)); transition: transform 0.15s linear; }
   .blob{ position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.2; will-change: transform; }
-  .b1{ width: 440px; height: 440px; top: -140px; left: -100px; background: var(--amber); animation: drift1 28s ease-in-out infinite; }
-  .b2{ width: 380px; height: 380px; top: 32%; right: -140px; background: var(--teal); animation: drift2 34s ease-in-out infinite; }
-  .b3{ width: 340px; height: 340px; bottom: -110px; left: 18%; background: var(--rose); animation: drift3 24s ease-in-out infinite; }
+  .b1{ width: 440px; height: 440px; top: -140px; left: -100px; background: var(--rose); animation: drift1 28s ease-in-out infinite; }
+  .b2{ width: 380px; height: 380px; top: 32%; right: -140px; background: var(--amber); animation: drift2 34s ease-in-out infinite; }
+  .b3{ width: 340px; height: 340px; bottom: -110px; left: 18%; background: var(--teal); animation: drift3 24s ease-in-out infinite; }
   @keyframes drift1{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(55px,45px) scale(1.12);} }
   @keyframes drift2{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(-45px,55px) scale(0.9);} }
   @keyframes drift3{ 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(35px,-45px) scale(1.08);} }
@@ -51,20 +48,14 @@
 
   .wrap{ position: relative; z-index: 1; max-width: var(--max-w); margin: 0 auto; padding: clamp(24px, 6vw, 64px) clamp(18px, 5vw, 32px) 100px; }
 
-  .crumbs{ display:flex; flex-wrap:wrap; gap: 12px; margin-bottom: 36px; }
-  .crumbs a{
-    display:inline-flex; align-items:center; gap:10px;
-    font-family:'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.04em;
-    color: var(--ink); text-decoration: none; background: #fff; border: 1px solid var(--teal);
-    padding: 12px 20px; border-radius: 999px; transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  .crumbs a:hover{ transform: translateY(-1px); box-shadow: 0 6px 16px rgba(44,86,92,0.25); }
+  .back{ display:inline-block; font-family:'JetBrains Mono', monospace; font-size: 13px; letter-spacing: 0.06em; color: var(--teal); text-decoration: none; margin-bottom: 32px; opacity: 0.8; }
+  .back:hover{ opacity: 1; }
 
-  header{ position: relative; padding-bottom: 40px; margin-bottom: 48px; border-bottom: 1px solid var(--line); }
-  .eyebrow{ display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--amber); margin-bottom: 22px; }
-  .eyebrow .dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
-
+  header{ padding-bottom: 40px; margin-bottom: 48px; border-bottom: 1px solid var(--line); }
+  .eyebrow{ display:flex; align-items:center; gap:10px; font-family:'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rose); margin-bottom: 22px; }
+  .eyebrow .dot{ width: 6px; height: 6px; border-radius: 50%; background: var(--rose); }
   h1{ font-family:'Fraunces', serif; font-weight: 600; font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1.02; margin: 0 0 20px; letter-spacing: -0.01em; }
+  h1 em{ font-style: italic; font-weight: 500; color: var(--amber); }
   .lede{ max-width: 56ch; color: rgba(34,29,22,0.72); font-size: 1.05rem; margin: 0; }
 
   .side-label{ font-family:'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--teal); margin: 0 0 24px; display:flex; align-items:center; gap: 14px; }
@@ -74,96 +65,65 @@
   @media (min-width: 680px){ .tracklist{ grid-template-columns: 1fr 1fr; gap: 24px; } }
 
   .track{
+    display:grid; grid-template-columns: 56px 1fr; gap: 16px;
     background: linear-gradient(180deg, #fffdf8, var(--cream-deep));
-    border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 18px;
+    border: 1px solid var(--line); border-radius: 16px; padding: 18px;
     box-shadow: 0 1px 2px rgba(34,29,22,0.04);
     transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
   }
   .track:hover{ border-color: rgba(181,122,44,0.5); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(34,29,22,0.08); }
-  .track-head{ display:flex; align-items: baseline; gap: 12px; margin-bottom: 12px; }
-  .track-num{ font-family:'JetBrains Mono', monospace; font-size: 13px; color: var(--amber); min-width: 22px; }
-  .track-note{ font-size: 13.5px; color: rgba(34,29,22,0.62); font-style: italic; margin: 0 0 12px; }
+  .rank{ font-family:'Fraunces', serif; font-weight: 600; font-style: italic; font-size: 2.1rem; line-height: 1; color: transparent; -webkit-text-stroke: 1px var(--amber); align-self: start; padding-top: 4px; }
+  .track-body{ min-width: 0; }
+  .track-note{ font-size: 14px; color: rgba(34,29,22,0.68); margin: 0 0 12px; }
   .embed-frame{ border-radius: 12px; overflow: hidden; }
   .embed-frame iframe{ display:block; width: 100%; border: 0; }
 
-  footer{ margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--line); font-family:'JetBrains Mono', monospace; font-size: 12px; color: rgba(34,29,22,0.45); letter-spacing: 0.03em; }
+  @media (max-width: 480px){ .track{ grid-template-columns: 40px 1fr; padding: 14px; } .rank{ font-size: 1.6rem; } }
+
+  footer{ margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--line); font-family:'JetBrains Mono', monospace; font-size: 12px; color: rgba(34,29,22,0.45); letter-spacing: 0.03em; display:flex; flex-wrap:wrap; justify-content:space-between; gap: 16px; }
   footer a{ color: inherit; }
 
-  .directory{ display:grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
-  @media (min-width: 640px){ .directory{ grid-template-columns: 1fr 1fr; } }
-  .directory a{
-    display:flex; align-items:center; justify-content: space-between; gap: 12px;
-    text-decoration: none; color: var(--ink);
-    background: linear-gradient(180deg, #fffdf8, var(--cream-deep));
-    border: 1px solid var(--line); border-radius: 8px;
-    padding: 14px 18px; font-family:'JetBrains Mono', monospace; font-size: 13.5px;
-    transition: border-color 0.2s ease, transform 0.2s ease;
-  }
-  .directory a:hover{ border-color: var(--amber); transform: translateX(2px); }
-  .directory .n{ color: var(--amber); margin-right: 10px; }
-  .directory .arrow{ color: var(--teal); opacity: 0.6; transition: transform 0.2s ease; }
-  .directory a:hover .arrow{ transform: translateX(3px); }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior: auto; } .track{ transition: none; } }
 </style>
 </head>
 <body>
-
 <div class="bg-anim" aria-hidden="true">
   <div class="blob-wrap" data-depth="0.05"><span class="blob b1"></span></div>
   <div class="blob-wrap" data-depth="0.09"><span class="blob b2"></span></div>
   <div class="blob-wrap" data-depth="0.03"><span class="blob b3"></span></div>
 </div>
-
 <div class="wrap">
 
-  <nav class="crumbs">
-    <a href="#story">{{.DisplayName}}'s story</a>
-  </nav>
+  <a class="back" href="/user/{{.UserSlug}}">&larr; back to {{.UserSlug}}'s profile</a>
 
   <header>
-    <div class="eyebrow"><span class="dot"></span> a page of their own</div>
-    <h1>{{.DisplayName}}'s favorite songs</h1>
-    {{if .Tagline}}<p class="lede">{{.Tagline}}</p>{{end}}
+    <div class="eyebrow"><span class="dot"></span> {{.UserSlug}}'s list</div>
+    <h1><em>{{.Category.Name}}</em></h1>
+    {{if .Category.Description}}<p class="lede">{{.Category.Description}}</p>{{end}}
   </header>
-
-  {{if .Story}}
-  <section id="story" style="margin-bottom: 56px;">
-    <p class="side-label">the story</p>
-    <p class="lede">{{.Story}}</p>
-  </section>
-  {{end}}
 
   <p class="side-label">the lineup</p>
 
   <div class="tracklist">
-    {{range .Songs}}
+    {{range .Category.Songs}}
     <div class="track">
-      <div class="track-head">
-        <span class="track-num">{{printf "%02d" .Position}}</span>
-      </div>
-      {{if .Caption}}<p class="track-note">{{.Caption}}</p>{{end}}
-      <div class="embed-frame">
-        <iframe data-testid="embed-iframe" src="https://open.spotify.com/embed/{{.SpotifyType}}/{{.SpotifyID}}?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+      <div class="rank">{{printf "%02d" .Position}}</div>
+      <div class="track-body">
+        {{if .Caption}}<p class="track-note">{{.Caption}}</p>{{end}}
+        <div class="embed-frame">
+          <iframe src="https://open.spotify.com/embed/{{.SpotifyType}}/{{.SpotifyID}}?utm_source=generator" width="100%" height="352" frameborder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+        </div>
       </div>
     </div>
     {{end}}
   </div>
 
-  {{if .Categories}}
-  <p class="side-label" style="margin-top: 56px;">{{.DisplayName}}'s categories</p>
-
-  <nav class="directory">
-    {{range .Categories}}
-    <a href="/user/{{$.Slug}}/category/{{.Slug}}"><span><span class="n">{{printf "%02d" .Position}}</span>{{.Name}}</span><span class="arrow">&rarr;</span></a>
-    {{end}}
-  </nav>
-  {{end}}
-
   <footer>
-    <span>part of {{.DisplayName}}'s music story &mdash; <a href="/">back home</a></span>
+    <span>part of {{.UserSlug}}'s music story &mdash; <a href="/">back home</a></span>
+    <span><a href="/user/{{.UserSlug}}">all categories &rarr;</a></span>
   </footer>
 
 </div>
-
 <script>
 (function(){
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

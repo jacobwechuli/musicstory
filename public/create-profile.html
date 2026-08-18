@@ -54,6 +54,42 @@
   }
   button.add:hover{ border-color: var(--green); }
 
+  .section-divider{
+    border: none; border-top: 1px solid var(--line);
+    margin: 8px 0 28px;
+  }
+
+  .category-row{
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 16px; margin-bottom: 12px; position: relative;
+  }
+  .category-row .n{ font-size: 11px; color: var(--amber); margin-bottom: 8px; display:block; }
+  .category-row input, .category-row textarea{ margin-bottom: 10px; }
+  .category-row input:last-child, .category-row textarea:last-child{ margin-bottom: 0; }
+  .remove-cat{
+    position:absolute; top:12px; right:14px; background:none; border:none;
+    color: rgba(237,237,234,0.4); cursor:pointer; font-size: 13px;
+  }
+  .remove-cat:hover{ color: var(--amber); }
+
+  .cat-songs-label{ font-size: 11.5px; color: rgba(237,237,234,0.55); margin: 12px 0 8px; display:block; }
+
+  .cat-song-row{ display:flex; gap: 8px; margin-bottom: 8px; }
+  .cat-song-row input{ flex:1; margin-bottom: 0; }
+  .cat-song-row button{
+    background: none; border: 1px solid var(--line); color: rgba(237,237,234,0.5);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 0 10px;
+    border-radius: 4px; cursor: pointer; white-space: nowrap;
+  }
+  .cat-song-row button:hover{ border-color: var(--amber); color: var(--amber); }
+
+  button.add-cat-song{
+    background: none; border: 1px dashed rgba(252,186,90,0.3); color: var(--amber);
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 8px;
+    width: 100%; border-radius: 4px; cursor: pointer; margin-top: 4px;
+  }
+  button.add-cat-song:hover{ border-color: var(--amber); }
+
   button.submit{
     width: 100%; font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 15px;
     color: var(--night); background: var(--green); border: none; padding: 16px;
@@ -96,6 +132,12 @@
     <div id="songs"></div>
     <button type="button" class="add" id="add-song">+ add another song</button>
 
+    <hr class="section-divider">
+
+    <label>Categories <span style="color:rgba(237,237,234,0.4);font-size:11px;">(optional — group your songs, like "All-time favorites")</span></label>
+    <div id="categories"></div>
+    <button type="button" class="add" id="add-category">+ add a category</button>
+
     <button type="submit" class="submit" id="submit-btn">Create Profile &rarr;</button>
     <div id="status"></div>
   </form>
@@ -103,6 +145,7 @@
 </div>
 
 <script>
+// ---- Songs ----
 const songsEl = document.getElementById('songs');
 let songCount = 0;
 
@@ -124,6 +167,45 @@ function addSongRow() {
 for (let i = 0; i < 3; i++) addSongRow();
 document.getElementById('add-song').addEventListener('click', addSongRow);
 
+// ---- Categories ----
+const catsEl = document.getElementById('categories');
+let catCount = 0;
+
+function addCatSongRow(songsContainer) {
+  const row = document.createElement('div');
+  row.className = 'cat-song-row';
+  row.innerHTML = `
+    <input type="text" class="cat-song-input" placeholder="Paste a Spotify link or song name">
+    <input type="text" class="cat-song-note" placeholder="Note (optional)">
+    <button type="button">✕</button>
+  `;
+  row.querySelector('button').addEventListener('click', () => row.remove());
+  songsContainer.appendChild(row);
+}
+
+function addCategoryRow() {
+  catCount++;
+  const row = document.createElement('div');
+  row.className = 'category-row';
+  row.innerHTML = `
+    <span class="n">CATEGORY ${String(catCount).padStart(2, '0')}</span>
+    <button type="button" class="remove-cat">remove</button>
+    <input type="text" class="cat-name" placeholder='Name, e.g. "All-time favorites"'>
+    <input type="text" class="cat-desc" placeholder="Short description (optional)">
+    <span class="cat-songs-label">Songs in this category</span>
+    <div class="cat-songs"></div>
+    <button type="button" class="add-cat-song">+ add song to category</button>
+  `;
+  catsEl.appendChild(row);
+  row.querySelector('.remove-cat').addEventListener('click', () => row.remove());
+  const catSongs = row.querySelector('.cat-songs');
+  addCatSongRow(catSongs);
+  row.querySelector('.add-cat-song').addEventListener('click', () => addCatSongRow(catSongs));
+}
+
+document.getElementById('add-category').addEventListener('click', addCategoryRow);
+
+// ---- Submit ----
 document.getElementById('profile-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const statusEl = document.getElementById('status');
@@ -147,6 +229,19 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
   if (!displayName) { statusEl.textContent = 'Your name is required.'; statusEl.className = 'error'; return; }
   if (songs.length === 0) { statusEl.textContent = 'Add at least one song.'; statusEl.className = 'error'; return; }
 
+  // Collect categories — only include ones that have a name and at least one song.
+  const catRows = Array.from(document.querySelectorAll('.category-row'));
+  const categories = catRows.map(row => ({
+    name: row.querySelector('.cat-name').value.trim(),
+    description: row.querySelector('.cat-desc').value.trim(),
+    songs: Array.from(row.querySelectorAll('.cat-song-row'))
+      .map(r => ({
+        input: r.querySelector('.cat-song-input').value.trim(),
+        note: r.querySelector('.cat-song-note').value.trim(),
+      }))
+      .filter(s => s.input !== ''),
+  })).filter(c => c.name !== '' && c.songs.length > 0);
+
   const payload = {
     display_name: displayName,
     tagline: tagline,
@@ -159,6 +254,7 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
   submitBtn.disabled = true;
   statusEl.textContent = 'Creating your page...';
 
+  let userSlug;
   try {
     const res = await fetch('/api/submit', {
       method: 'POST',
@@ -170,14 +266,42 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
       throw new Error(text || 'Something went wrong.');
     }
     const data = await res.json();
-    statusEl.textContent = 'Done — taking you there now.';
-    statusEl.className = 'ok';
-    window.location.href = '/user/' + data.slug;
+    userSlug = data.slug;
   } catch (err) {
     statusEl.textContent = err.message || 'Something went wrong. Try again.';
     statusEl.className = 'error';
     submitBtn.disabled = false;
+    return;
   }
+
+  // Save each category sequentially.
+  if (categories.length > 0) {
+    statusEl.textContent = `Saving ${categories.length} categor${categories.length === 1 ? 'y' : 'ies'}...`;
+    for (const cat of categories) {
+      try {
+        const res = await fetch('/api/category', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_slug: userSlug,
+            name: cat.name,
+            description: cat.description,
+            songs: cat.songs,
+          }),
+        });
+        if (!res.ok) {
+          // Non-fatal: category failed but profile was created — continue.
+          console.warn('category save failed for', cat.name);
+        }
+      } catch (_) {
+        console.warn('category request failed for', cat.name);
+      }
+    }
+  }
+
+  statusEl.textContent = 'Done — taking you there now.';
+  statusEl.className = 'ok';
+  window.location.href = '/user/' + userSlug;
 });
 </script>
 </body>

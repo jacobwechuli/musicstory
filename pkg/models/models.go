@@ -11,12 +11,21 @@ type Song struct {
 	AutoCaption bool // true if the LLM wrote this caption, false if the user did
 }
 
+type Category struct {
+	Slug        string
+	Name        string
+	Description string
+	Position    int
+	Songs       []Song
+}
+
 type UserPage struct {
 	Slug        string
 	DisplayName string
 	Tagline     string
 	Story       string
 	Songs       []Song
+	Categories  []Category
 }
 
 type ProfileSummary struct {

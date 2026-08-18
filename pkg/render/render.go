@@ -18,9 +18,13 @@ var userTemplateFS embed.FS
 //go:embed profiles-template.html
 var profilesTemplateFS embed.FS
 
+//go:embed category-template.html
+var categoryTemplateFS embed.FS
+
 var (
 	userTmpl     = template.Must(template.ParseFS(userTemplateFS, "user-template.html"))
 	profilesTmpl = template.Must(template.ParseFS(profilesTemplateFS, "profiles-template.html"))
+	categoryTmpl = template.Must(template.ParseFS(categoryTemplateFS, "category-template.html"))
 )
 
 func User(w http.ResponseWriter, page models.UserPage) error {
@@ -31,4 +35,14 @@ func User(w http.ResponseWriter, page models.UserPage) error {
 func Profiles(w http.ResponseWriter, page models.ProfilesPage) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	return profilesTmpl.Execute(w, page)
+}
+
+type categoryPageData struct {
+	UserSlug string
+	Category models.Category
+}
+
+func Category(w http.ResponseWriter, userSlug string, cat models.Category) error {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	return categoryTmpl.Execute(w, categoryPageData{UserSlug: userSlug, Category: cat})
 }

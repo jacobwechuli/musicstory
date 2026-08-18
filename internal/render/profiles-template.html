@@ -90,7 +90,7 @@
     {{end}}
   </div>
 
-  {{if not .Users}}
+  {{if eq (len .Users) 0}}
   <div class="empty">
     No one else has joined yet &mdash; new profiles will appear here automatically the moment they're created.
   </div>
