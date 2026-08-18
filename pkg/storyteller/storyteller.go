@@ -12,23 +12,27 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 )
 
-// Notes is whatever the user optionally jotted down — a sentence or two on
-// what music means to them, a favorite memory, anything. Can be empty; if
-// it is, the story comes out generic and short rather than invented.
-func GenerateStory(ctx context.Context, displayName string, notes string) (string, error) {
-	systemPrompt := `You write a short personal blurb (2-3 sentences, no more) for someone's ` +
-		`music page, in this voice: plainspoken, warm, a little wry — never overwrought or ` +
-		`poetic-for-its-own-sake. Keep it simple. If notes are given, stay close to what they ` +
-		`actually said — do not invent specific memories, people, or details they didn't mention. ` +
-		`If no notes are given, write something short and honest, like "no big story here — ` +
-		`just a few songs worth sharing," in a way that still sounds like a real sentence, not ` +
-		`a placeholder. Return ONLY the story text. No quotes, no preamble, no markdown.`
+// GenerateStory writes a 2-3 sentence personality blurb driven by the genres
+// the user selected. Notes are optional extra context the user typed.
+func GenerateStory(ctx context.Context, displayName string, genres []string, notes string) (string, error) {
+	systemPrompt := `You write a short personality story (2-3 sentences, no more) for someone's ` +
+		`music page. You are given the music genres they identified with and optional personal notes. ` +
+		`Use the genres to paint a picture of their musical personality — what kind of person listens ` +
+		`to these genres, how they experience music, what it says about them. ` +
+		`Voice: plainspoken, warm, a little wry — never overwrought or poetic-for-its-own-sake. ` +
+		`If personal notes are given, weave them in naturally but do not invent details they didn't mention. ` +
+		`Return ONLY the story text. No quotes, no preamble, no markdown.`
 
-	userContent := fmt.Sprintf("Name: %s\nNotes: %s", displayName, notes)
+	genreList := strings.Join(genres, ", ")
+	if genreList == "" {
+		genreList = "(none given)"
+	}
+	userContent := fmt.Sprintf("Name: %s\nGenres: %s\nNotes: %s", displayName, genreList, notes)
 	if notes == "" {
-		userContent = fmt.Sprintf("Name: %s\nNotes: (none given)", displayName)
+		userContent = fmt.Sprintf("Name: %s\nGenres: %s", displayName, genreList)
 	}
 
 	body, _ := json.Marshal(map[string]any{

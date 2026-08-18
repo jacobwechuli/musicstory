@@ -20,7 +20,8 @@
   .wrap{ max-width: 560px; margin: 0 auto; }
   a.back{ display:inline-block; font-size:12px; letter-spacing:0.1em; color: var(--green); text-decoration:none; opacity:0.7; margin-bottom:28px; }
   .kicker{ font-size: 12px; letter-spacing: 0.14em; color: var(--green); margin: 0 0 16px; }
-  h1{ font-family: 'Archivo', sans-serif; font-weight: 900; font-size: clamp(1.8rem, 6vw, 2.4rem); margin: 0 0 32px; }
+  h1{ font-family: 'Archivo', sans-serif; font-weight: 900; font-size: clamp(1.8rem, 6vw, 2.4rem); margin: 0 0 8px; }
+  .subhead{ font-size: 13.5px; color: rgba(237,237,234,0.5); margin: 0 0 32px; }
 
   label{ display:block; font-size: 12.5px; color: rgba(237,237,234,0.6); margin-bottom: 8px; }
   input[type="text"], textarea{
@@ -30,9 +31,52 @@
   }
   textarea{ resize: vertical; min-height: 70px; }
 
-  fieldset{ border: none; padding: 0; margin: 0 0 24px; }
-  .radio-row{ display:flex; gap: 20px; margin-bottom: 12px; font-size: 13.5px; }
-  .radio-row label{ display:flex; align-items:center; gap: 8px; margin: 0; color: var(--paper); }
+  /* ---- Genre picker ---- */
+  .genre-label{
+    font-size: 12.5px; color: rgba(237,237,234,0.6); margin-bottom: 14px;
+  }
+  .genre-grid{
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;
+  }
+  .genre-pill{
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px;
+    color: rgba(237,237,234,0.65); background: var(--panel);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: 7px 16px; cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+    user-select: none;
+  }
+  .genre-pill:hover{ border-color: rgba(122,238,164,0.5); color: var(--paper); }
+  .genre-pill.selected{
+    color: var(--night); background: var(--green); border-color: var(--green);
+  }
+  .genre-hint{
+    font-size: 11.5px; color: rgba(237,237,234,0.35); margin: -16px 0 24px;
+  }
+
+  /* ---- Story section ---- */
+  .story-box{
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 18px; margin-bottom: 28px;
+  }
+  .story-box .story-heading{
+    font-size: 12px; letter-spacing: 0.1em; color: var(--green); margin: 0 0 10px;
+  }
+  .story-box p{
+    font-size: 13px; color: rgba(237,237,234,0.55); margin: 0 0 14px; line-height: 1.6;
+  }
+  .radio-row{ display:flex; flex-wrap: wrap; gap: 10px 20px; margin-bottom: 12px; font-size: 13.5px; }
+  .radio-row label{ display:flex; align-items:center; gap: 8px; margin: 0; color: var(--paper); white-space: nowrap; }
+  fieldset{ border: none; padding: 0; margin: 0; }
+
+  /* ---- Song rows ---- */
+  .songs-toggle{
+    font-size: 12.5px; color: rgba(237,237,234,0.45); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  .songs-toggle .arrow{ transition: transform 0.2s; display: inline-block; }
+  .songs-toggle.open .arrow{ transform: rotate(90deg); }
+  .songs-section{ display: none; }
+  .songs-section.open{ display: block; }
 
   .song-row{
     background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
@@ -101,6 +145,12 @@
   #status{ margin-top: 16px; font-size: 13px; text-align: center; min-height: 20px; }
   #status.error{ color: var(--amber); }
   #status.ok{ color: var(--green); }
+
+  .req-badge{
+    display: inline-block; font-size: 10px; letter-spacing: 0.08em;
+    color: var(--amber); border: 1px solid rgba(252,186,90,0.4);
+    border-radius: 999px; padding: 1px 7px; margin-left: 8px; vertical-align: middle;
+  }
 </style>
 </head>
 <body>
@@ -109,28 +159,74 @@
   <a class="back" href="index.html">&larr; back to the front page</a>
 
   <p class="kicker">// NEW_PROFILE.WAV</p>
-  <h1>Tell us what you're playing.</h1>
+  <h1>What kind of music are you?</h1>
+  <p class="subhead">Pick the genres that describe you — the AI will write your story from them.</p>
 
   <form id="profile-form">
+
+    <!-- Name + tagline -->
     <label for="display_name">Your name</label>
     <input type="text" id="display_name" required placeholder="Kevin">
 
-    <label for="tagline">One-liner (optional)</label>
+    <label for="tagline">One-liner <span style="color:rgba(237,237,234,0.3);font-size:11px;">(optional)</span></label>
     <input type="text" id="tagline" placeholder="genre-agnostic, always loud">
 
-    <fieldset>
-      <label>Your story</label>
-      <div class="radio-row">
-        <label><input type="radio" name="story_mode" value="write" checked> I'll write it</label>
-        <label><input type="radio" name="story_mode" value="ai"> let AI write it</label>
-        <label><input type="radio" name="story_mode" value="skip"> skip it</label>
-      </div>
-      <textarea id="story_text" placeholder="A couple sentences about you and music..."></textarea>
-    </fieldset>
+    <!-- Genre picker -->
+    <label class="genre-label">
+      Genres that describe you <span class="req-badge">pick at least one</span>
+    </label>
+    <div class="genre-grid" id="genre-grid">
+      <span class="genre-pill" data-genre="Hip-Hop">Hip-Hop</span>
+      <span class="genre-pill" data-genre="R&amp;B">R&amp;B</span>
+      <span class="genre-pill" data-genre="Pop">Pop</span>
+      <span class="genre-pill" data-genre="Rock">Rock</span>
+      <span class="genre-pill" data-genre="Indie">Indie</span>
+      <span class="genre-pill" data-genre="Electronic">Electronic</span>
+      <span class="genre-pill" data-genre="Jazz">Jazz</span>
+      <span class="genre-pill" data-genre="Soul">Soul</span>
+      <span class="genre-pill" data-genre="Classical">Classical</span>
+      <span class="genre-pill" data-genre="Metal">Metal</span>
+      <span class="genre-pill" data-genre="Punk">Punk</span>
+      <span class="genre-pill" data-genre="Folk">Folk</span>
+      <span class="genre-pill" data-genre="Country">Country</span>
+      <span class="genre-pill" data-genre="Reggae">Reggae</span>
+      <span class="genre-pill" data-genre="Latin">Latin</span>
+      <span class="genre-pill" data-genre="Afrobeats">Afrobeats</span>
+      <span class="genre-pill" data-genre="Blues">Blues</span>
+      <span class="genre-pill" data-genre="Drill">Drill</span>
+      <span class="genre-pill" data-genre="Ambient">Ambient</span>
+      <span class="genre-pill" data-genre="Lo-fi">Lo-fi</span>
+      <span class="genre-pill" data-genre="Gospel">Gospel</span>
+      <span class="genre-pill" data-genre="K-Pop">K-Pop</span>
+      <span class="genre-pill" data-genre="Trap">Trap</span>
+      <span class="genre-pill" data-genre="House">House</span>
+      <span class="genre-pill" data-genre="Emo">Emo</span>
+    </div>
+    <p class="genre-hint">Can't find yours? Add it in the notes below.</p>
 
-    <label>Songs</label>
-    <div id="songs"></div>
-    <button type="button" class="add" id="add-song">+ add another song</button>
+    <!-- Story section -->
+    <div class="story-box">
+      <p class="story-heading">// YOUR STORY</p>
+      <p>The AI will write a short personality story based on the genres you picked. You can add extra notes, write your own, or skip it entirely.</p>
+      <fieldset>
+        <div class="radio-row">
+          <label><input type="radio" name="story_mode" value="ai" checked> AI writes it from my genres</label>
+          <label><input type="radio" name="story_mode" value="write"> I'll write it</label>
+          <label><input type="radio" name="story_mode" value="skip"> skip</label>
+        </div>
+        <textarea id="story_text" placeholder="Extra notes for the AI, or your own story if writing it yourself..."></textarea>
+      </fieldset>
+    </div>
+
+    <!-- Songs — collapsible, optional -->
+    <div class="songs-toggle" id="songs-toggle">
+      <span class="arrow">&#9654;</span>
+      <span>Add specific songs <span style="color:rgba(237,237,234,0.3);font-size:11px;">(optional)</span></span>
+    </div>
+    <div class="songs-section" id="songs-section">
+      <div id="songs"></div>
+      <button type="button" class="add" id="add-song">+ add another song</button>
+    </div>
 
     <hr class="section-divider">
 
@@ -140,11 +236,53 @@
 
     <button type="submit" class="submit" id="submit-btn">Create Profile &rarr;</button>
     <div id="status"></div>
+
   </form>
 
 </div>
 
 <script>
+// ---- Genre picker ----
+const selectedGenres = new Set();
+document.querySelectorAll('.genre-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    const g = pill.dataset.genre;
+    if (selectedGenres.has(g)) {
+      selectedGenres.delete(g);
+      pill.classList.remove('selected');
+    } else {
+      selectedGenres.add(g);
+      pill.classList.add('selected');
+    }
+  });
+});
+
+// ---- Story mode: hide textarea when AI is selected (unless they want to add notes) ----
+const storyText = document.getElementById('story_text');
+function updateStoryPlaceholder() {
+  const mode = document.querySelector('input[name="story_mode"]:checked').value;
+  if (mode === 'ai') {
+    storyText.placeholder = 'Extra notes for the AI (optional) — e.g. "I grew up in Lagos" or "big on sad late-night drives"';
+  } else if (mode === 'write') {
+    storyText.placeholder = 'A couple sentences about you and music...';
+  } else {
+    storyText.placeholder = '';
+  }
+}
+document.querySelectorAll('input[name="story_mode"]').forEach(r => r.addEventListener('change', updateStoryPlaceholder));
+updateStoryPlaceholder();
+
+// ---- Songs toggle ----
+const songsToggle = document.getElementById('songs-toggle');
+const songsSection = document.getElementById('songs-section');
+songsToggle.addEventListener('click', () => {
+  const open = songsSection.classList.toggle('open');
+  songsToggle.classList.toggle('open', open);
+  if (open && document.getElementById('songs').children.length === 0) {
+    addSongRow();
+  }
+});
+
 // ---- Songs ----
 const songsEl = document.getElementById('songs');
 let songCount = 0;
@@ -164,7 +302,6 @@ function addSongRow() {
   if (removeBtn) removeBtn.addEventListener('click', () => row.remove());
 }
 
-for (let i = 0; i < 3; i++) addSongRow();
 document.getElementById('add-song').addEventListener('click', addSongRow);
 
 // ---- Categories ----
@@ -216,7 +353,11 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
   const displayName = document.getElementById('display_name').value.trim();
   const tagline = document.getElementById('tagline').value.trim();
   const storyMode = document.querySelector('input[name="story_mode"]:checked').value;
-  const storyText = document.getElementById('story_text').value.trim();
+  const storyTextVal = document.getElementById('story_text').value.trim();
+  const genres = Array.from(selectedGenres);
+
+  if (!displayName) { statusEl.textContent = 'Your name is required.'; statusEl.className = 'error'; return; }
+  if (genres.length === 0) { statusEl.textContent = 'Pick at least one genre.'; statusEl.className = 'error'; return; }
 
   const songRows = Array.from(document.querySelectorAll('.song-row'));
   const songs = songRows
@@ -226,10 +367,7 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
     }))
     .filter(s => s.input !== '');
 
-  if (!displayName) { statusEl.textContent = 'Your name is required.'; statusEl.className = 'error'; return; }
-  if (songs.length === 0) { statusEl.textContent = 'Add at least one song.'; statusEl.className = 'error'; return; }
-
-  // Collect categories — only include ones that have a name and at least one song.
+  // Collect categories.
   const catRows = Array.from(document.querySelectorAll('.category-row'));
   const categories = catRows.map(row => ({
     name: row.querySelector('.cat-name').value.trim(),
@@ -245,14 +383,17 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
   const payload = {
     display_name: displayName,
     tagline: tagline,
-    story: storyMode === 'write' ? storyText : '',
+    story: storyMode === 'write' ? storyTextVal : '',
     want_ai_story: storyMode === 'ai',
-    story_notes: storyMode === 'ai' ? storyText : '',
+    story_notes: storyMode === 'ai' ? storyTextVal : '',
+    genres: genres,
     songs: songs,
   };
 
   submitBtn.disabled = true;
-  statusEl.textContent = 'Creating your page...';
+  statusEl.textContent = storyMode === 'ai'
+    ? 'Writing your story from your genres...'
+    : 'Creating your page...';
 
   let userSlug;
   try {
@@ -290,7 +431,6 @@ document.getElementById('profile-form').addEventListener('submit', async (e) => 
           }),
         });
         if (!res.ok) {
-          // Non-fatal: category failed but profile was created — continue.
           console.warn('category save failed for', cat.name);
         }
       } catch (_) {

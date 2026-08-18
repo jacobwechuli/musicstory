@@ -27,6 +27,7 @@ type submitRequest struct {
 	Story       string       `json:"story"`
 	WantAIStory bool         `json:"want_ai_story"`
 	StoryNotes  string       `json:"story_notes"`
+	Genres      []string     `json:"genres"`
 	Songs       []submitSong `json:"songs"`
 }
 
@@ -43,10 +44,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	if strings.TrimSpace(req.DisplayName) == "" {
 		http.Error(w, "display_name is required", http.StatusBadRequest)
-		return
-	}
-	if len(req.Songs) == 0 {
-		http.Error(w, "at least one song is required", http.StatusBadRequest)
 		return
 	}
 
@@ -108,7 +105,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	story := strings.TrimSpace(req.Story)
 	autoStory := false
 	if story == "" && req.WantAIStory {
-		generated, err := storyteller.GenerateStory(r.Context(), req.DisplayName, req.StoryNotes)
+		generated, err := storyteller.GenerateStory(r.Context(), req.DisplayName, req.Genres, req.StoryNotes)
 		if err == nil {
 			story = generated
 			autoStory = true
