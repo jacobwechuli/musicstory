@@ -1,5 +1,4 @@
-// GET /user/:slug/category/:cat  (rewritten via vercel.json)
-// Renders a single category page for a user.
+// GET /user/:slug
 package handler
 
 import (
@@ -11,9 +10,8 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	userSlug := r.URL.Query().Get("slug")
-	catSlug := r.URL.Query().Get("cat")
-	if userSlug == "" || catSlug == "" {
+	slug := r.URL.Query().Get("slug")
+	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
@@ -24,7 +22,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cat, err := db.GetCategoryWithSongs(r.Context(), database, userSlug, catSlug)
+	page, err := db.GetUserWithSongs(r.Context(), database, slug)
 	if err == sql.ErrNoRows {
 		http.NotFound(w, r)
 		return
@@ -34,7 +32,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := render.Category(w, userSlug, cat); err != nil {
+	if err := render.User(w, page); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }

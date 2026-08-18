@@ -1,7 +1,8 @@
-// GET /profiles  (rewritten from /api/profiles — see vercel.json)
+// GET /user/:slug/category/:cat
 package handler
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/jacobwechuli/musicstory/pkg/db"
@@ -9,19 +10,30 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
+	userSlug := r.URL.Query().Get("slug")
+	catSlug := r.URL.Query().Get("cat")
+	if userSlug == "" || catSlug == "" {
+		http.NotFound(w, r)
+		return
+	}
+
 	database, err := db.Open()
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
-	page, err := db.GetAllProfiles(r.Context(), database)
+	cat, err := db.GetCategoryWithSongs(r.Context(), database, userSlug, catSlug)
+	if err == sql.ErrNoRows {
+		http.NotFound(w, r)
+		return
+	}
 	if err != nil {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
-	if err := render.Profiles(w, page); err != nil {
+	if err := render.Category(w, userSlug, cat); err != nil {
 		http.Error(w, "render error", http.StatusInternalServerError)
 	}
 }

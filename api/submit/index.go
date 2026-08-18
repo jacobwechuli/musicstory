@@ -1,18 +1,4 @@
-// POST /api/category — create a new category for an existing user profile.
-//
-// Expected request body:
-//
-//	{
-//	  "user_slug":    "kevin",
-//	  "name":         "All-time favorites",
-//	  "description":  "optional intro text shown at the top of the category page",
-//	  "songs": [
-//	    { "input": "https://open.spotify.com/track/...", "note": "" },
-//	    { "input": "Anti Hero Taylor Swift", "note": "my note" }
-//	  ]
-//	}
-//
-// On success returns {"slug": "all-time-favorites", "user_slug": "kevin"}.
+// POST /api/submit
 package handler
 
 import (
@@ -27,26 +13,21 @@ import (
 	"github.com/jacobwechuli/musicstory/pkg/db"
 	"github.com/jacobwechuli/musicstory/pkg/models"
 	"github.com/jacobwechuli/musicstory/pkg/spotify"
+	"github.com/jacobwechuli/musicstory/pkg/storyteller"
 )
 
-var catSlugPattern = regexp.MustCompile(`[^a-z0-9]+`)
-
-func slugifyCat(name string) string {
-	s := strings.ToLower(strings.TrimSpace(name))
-	s = catSlugPattern.ReplaceAllString(s, "-")
-	return strings.Trim(s, "-")
-}
-
-type categorySong struct {
+type submitSong struct {
 	Input string `json:"input"`
 	Note  string `json:"note"`
 }
 
-type categoryRequest struct {
-	UserSlug    string         `json:"user_slug"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Songs       []categorySong `json:"songs"`
+type submitRequest struct {
+	DisplayName string       `json:"display_name"`
+	Tagline     string       `json:"tagline"`
+	Story       string       `json:"story"`
+	WantAIStory bool         `json:"want_ai_story"`
+	StoryNotes  string       `json:"story_notes"`
+	Songs       []submitSong `json:"songs"`
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -55,19 +36,13 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req categoryRequest
+	var req submitRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	req.UserSlug = strings.TrimSpace(req.UserSlug)
-	req.Name = strings.TrimSpace(req.Name)
-	if req.UserSlug == "" {
-		http.Error(w, "user_slug is required", http.StatusBadRequest)
-		return
-	}
-	if req.Name == "" {
-		http.Error(w, "name is required", http.StatusBadRequest)
+	if strings.TrimSpace(req.DisplayName) == "" {
+		http.Error(w, "display_name is required", http.StatusBadRequest)
 		return
 	}
 	if len(req.Songs) == 0 {
@@ -84,7 +59,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	clientID := os.Getenv("SPOTIFY_CLIENT_ID")
 	clientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
 
-	// Resolve every song to a Spotify type + ID.
 	songs := make([]models.Song, 0, len(req.Songs))
 	type pendingCaption struct {
 		index  int
@@ -108,6 +82,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			s.SpotifyType = result.Type
 			s.SpotifyID = result.ID
 		}
+
 		songs = append(songs, s)
 
 		if s.Caption == "" {
@@ -116,13 +91,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Batch-generate missing captions.
 	if len(needsCaption) > 0 {
 		inputs := make([]captioner.SongInput, len(needsCaption))
 		for i, p := range needsCaption {
 			inputs[i] = captioner.SongInput{Position: p.index, Title: p.title, Artist: p.artist}
 		}
-		results, err := captioner.GenerateCaptions(r.Context(), req.UserSlug, inputs)
+		results, err := captioner.GenerateCaptions(r.Context(), req.DisplayName, inputs)
 		if err == nil {
 			for _, res := range results {
 				songs[res.Position].Caption = res.Caption
@@ -131,32 +105,46 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Derive a slug from the category name and de-duplicate within this user.
-	catSlug := slugifyCat(req.Name)
-	for i := 0; ; i++ {
-		candidate := catSlug
-		if i > 0 {
-			candidate = catSlug + "-" + strconv.Itoa(i+1)
+	story := strings.TrimSpace(req.Story)
+	autoStory := false
+	if story == "" && req.WantAIStory {
+		generated, err := storyteller.GenerateStory(r.Context(), req.DisplayName, req.StoryNotes)
+		if err == nil {
+			story = generated
+			autoStory = true
 		}
-		exists, err := db.CategorySlugExists(r.Context(), database, req.UserSlug, candidate)
+	}
+
+	slug := slugify(req.DisplayName)
+	for i := 0; ; i++ {
+		candidate := slug
+		if i > 0 {
+			candidate = slug + "-" + strconv.Itoa(i+1)
+		}
+		exists, err := db.SlugExists(r.Context(), database, candidate)
 		if err != nil {
 			http.Error(w, "server error", http.StatusInternalServerError)
 			return
 		}
 		if !exists {
-			catSlug = candidate
+			slug = candidate
 			break
 		}
 	}
 
-	if err := db.CreateCategory(r.Context(), database, req.UserSlug, catSlug, req.Name, req.Description, songs); err != nil {
-		http.Error(w, "could not save category", http.StatusInternalServerError)
+	if err := db.CreateUserWithSongs(r.Context(), database, slug, req.DisplayName, req.Tagline, story, autoStory, songs); err != nil {
+		http.Error(w, "could not save profile", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"slug":      catSlug,
-		"user_slug": req.UserSlug,
-	})
+	json.NewEncoder(w).Encode(map[string]string{"slug": slug})
+}
+
+var slugPattern = regexp.MustCompile(`[^a-z0-9]+`)
+
+func slugify(name string) string {
+	s := strings.ToLower(strings.TrimSpace(name))
+	s = slugPattern.ReplaceAllString(s, "-")
+	return strings.Trim(s, "-")
 }
