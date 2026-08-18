@@ -288,6 +288,23 @@ func CreateUserWithSongs(ctx context.Context, database *sql.DB, slug, displayNam
 	return tx.Commit()
 }
 
+// DeleteUser removes a user and all their data (songs, categories, category_songs)
+// by cascade. Returns sql.ErrNoRows if the slug doesn't exist.
+func DeleteUser(ctx context.Context, database *sql.DB, slug string) error {
+	res, err := database.ExecContext(ctx, `DELETE FROM users WHERE slug = $1`, slug)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func nullIfEmpty(s string) any {
 	if s == "" {
 		return nil
