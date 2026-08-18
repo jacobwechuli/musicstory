@@ -89,20 +89,18 @@ type SearchResult struct {
 	Artist string
 }
 
-// SearchTrack finds the best-guess match for a typed song name. Returns the
-// top result only — callers building a confirm-before-save UI should show
-// this back to the user rather than saving silently, since a name search
-// can surface the wrong version (remaster, deluxe edition, etc).
-func SearchTrack(clientID, clientSecret, query string) (SearchResult, error) {
+// searchTracks is the shared implementation used by both SearchTrack and
+// SearchTracks — it returns up to `limit` results for a query.
+func searchTracks(clientID, clientSecret, query string, limit int) ([]SearchResult, error) {
 	token, err := getAccessToken(clientID, clientSecret)
 	if err != nil {
-		return SearchResult{}, err
+		return nil, err
 	}
 
 	endpoint := "https://api.spotify.com/v1/search?" + url.Values{
 		"q":     {query},
 		"type":  {"track"},
-		"limit": {"1"},
+		"limit": {fmt.Sprintf("%d", limit)},
 	}.Encode()
 
 	req, _ := http.NewRequest("GET", endpoint, nil)
@@ -110,12 +108,12 @@ func SearchTrack(clientID, clientSecret, query string) (SearchResult, error) {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return SearchResult{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return SearchResult{}, fmt.Errorf("spotify search returned %d", resp.StatusCode)
+		return nil, fmt.Errorf("spotify search returned %d", resp.StatusCode)
 	}
 
 	var parsed struct {
@@ -130,18 +128,46 @@ func SearchTrack(clientID, clientSecret, query string) (SearchResult, error) {
 		} `json:"tracks"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&parsed); err != nil {
-		return SearchResult{}, err
-	}
-	if len(parsed.Tracks.Items) == 0 {
-		return SearchResult{}, fmt.Errorf("no results for %q", query)
+		return nil, err
 	}
 
-	item := parsed.Tracks.Items[0]
-	artist := ""
-	if len(item.Artists) > 0 {
-		artist = item.Artists[0].Name
+	results := make([]SearchResult, 0, len(parsed.Tracks.Items))
+	for _, item := range parsed.Tracks.Items {
+		artist := ""
+		if len(item.Artists) > 0 {
+			artist = item.Artists[0].Name
+		}
+		results = append(results, SearchResult{Type: "track", ID: item.ID, Title: item.Name, Artist: artist})
 	}
-	return SearchResult{Type: "track", ID: item.ID, Title: item.Name, Artist: artist}, nil
+	return results, nil
+}
+
+// SearchTrack finds the best-guess match for a typed song name. Returns the
+// top result only — callers building a confirm-before-save UI should show
+// this back to the user rather than saving silently, since a name search
+// can surface the wrong version (remaster, deluxe edition, etc).
+func SearchTrack(clientID, clientSecret, query string) (SearchResult, error) {
+	results, err := searchTracks(clientID, clientSecret, query, 1)
+	if err != nil {
+		return SearchResult{}, err
+	}
+	if len(results) == 0 {
+		return SearchResult{}, fmt.Errorf("no results for %q", query)
+	}
+	return results[0], nil
+}
+
+// SearchTracks returns up to 5 results for a typed query — used by the
+// autocomplete endpoint so the user can pick the right version.
+func SearchTracks(clientID, clientSecret, query string) ([]SearchResult, error) {
+	results, err := searchTracks(clientID, clientSecret, query, 5)
+	if err != nil {
+		return nil, err
+	}
+	if len(results) == 0 {
+		return nil, fmt.Errorf("no results for %q", query)
+	}
+	return results, nil
 }
 
 // GetTrackMeta fetches title/artist for a track we already have an ID for

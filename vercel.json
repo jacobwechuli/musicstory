@@ -4,6 +4,7 @@
     { "source": "/user/:slug", "destination": "/api/user?slug=:slug" },
     { "source": "/profiles", "destination": "/api/profiles" },
     { "source": "/delete_profile", "destination": "/api/delete_profile" },
-    { "source": "/create-profile", "destination": "/create-profile.html" }
+    { "source": "/create-profile", "destination": "/create-profile.html" },
+    { "source": "/api/search", "destination": "/api/search" }
   ]
 }
